@@ -263,17 +263,32 @@ router.get('/status', verifyToken, async (req, res) => {
       col: 'veiculo_id',
       group: ['veiculo_id']
     });
+
+    const veiculosFora = await AccessRecord.count({
+      where: { tipo_operacao: 'saida', autorizado: true },
+      include: [
+        {
+          model: Vehicle,
+          as: 'veiculo',
+          required: true
+        }
+      ],
+      distinct: true,
+      col: 'veiculo_id',
+      group: ['veiculo_id']
+    });
     
     // TODO: Implementar contagem por setor (simplificado)
     
     // Capacidade total (valor fixo para exemplo)
     const capacidadeTotal = 100;
-    
+    const vagas_disponiveis = veiculosNoEstacionamento.length - veiculosFora.length
+
     return res.json({
       capacidade_total: capacidadeTotal,
-      veiculos_presentes: veiculosNoEstacionamento.length,
-      vagas_disponiveis: capacidadeTotal - veiculosNoEstacionamento.length,
-      ocupacao_percentual: (veiculosNoEstacionamento.length / capacidadeTotal) * 100
+      veiculos_presentes: veiculosNoEstacionamento.length - veiculosFora.length,
+      vagas_disponiveis: capacidadeTotal - vagas_disponiveis ,
+      ocupacao_percentual: (vagas_disponiveis / capacidadeTotal) * 100
     });
   } catch (error) {
     console.error('Erro ao obter status do estacionamento:', error);
